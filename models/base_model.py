@@ -1,57 +1,63 @@
 #!/usr/bin/python3
-"""
-Este modulo representa una clase BaseModel.
-"""
-import uuid
+''' Class BaseModel '''
+
+import models
 from datetime import datetime
+import uuid
 
 
 class BaseModel:
+    '''
+    Clase base que define todos los
+    atributos / métodos comunes para otras clases
+    '''
     def __init__(self, *args, **kwargs):
-        """
-        Inicializa una instancia de BaseModel.
-
-        Atributos:
-
-        Id: Genera un ID único utilizando uuid4 y
-        lo convierte en una cadena.
-
-        Created_at: Establece la fecha y hora de creación
-        al momento actual en formato ISO.
-
-        Updated_at: Establece la fecha y hora de actualización
-        al momento actual en formato ISO.
-
-        Args:
-            **Kwargs: Resibe un diccionario:
-        """
-        if kwargs:
-            for k, v in kwargs.items():
-                if k != "__class__":
-                    setattr(self, k, v)
-            self.__dict__["created_at"] = datetime.strptime(
-                self.__dict__["created_at"], "%Y-%m-%dT%H:%M:%S.%f")
-
-            self.__dict__["updated_at"] = datetime.strptime(
-                self.__dict__["updated_at"], "%Y-%m-%dT%H:%M:%S.%f")
-
+        if len(kwargs) > 0:
+            # Recorre la clave y valor en los items ingresados
+            for key, value in kwargs.items():
+                # Asigna la clave a la fecha actual de creación
+                if key == "created_at":
+                    self.created_at = datetime.strptime(
+                        value, "%Y-%m-%dT%H:%M:%S.%f")
+                # Asigna la clave a la fecha actualizada
+                elif key == "updated_at":
+                    self.updated_at = datetime.strptime(
+                        value, "%Y-%m-%dT%H:%M:%S.%f")
+                # Se asigna el valor al key
+                # self: Objeto cuyo atributo se va a asignar.
+                # key: atributo del objeto que debe asignarse.
+                # value: valor con el que se asignará la variable.
+                elif key != "__class__":
+                    setattr(self, key, value)
         else:
-            self.id = str(uuid.uuid4())
+            # Asigna id aleatorio
+            self.id = str(uuid.uuid4)
+            # Asigna fecha actual
             self.created_at = datetime.now()
-        self.updated_at = datetime.now()
+            # Actualiza la fecha de la ultima modificación
+            self.updated_at = self.created_at
+            # Si es una instancia nueva
+            # no de una representación de diccionario
+            models.storage.new(self)
 
     def __str__(self):
-        """Devuelve una representación de cadena del objeto."""
-        return f"[BaseModel] ({self.id}) {self.__dict__}"
+        ''' devuelve el nombre de la clase, el ID y
+        el diccionario de atributos '''
+        return "[{}] ({}) {}".format(
+            self.__class__.__name__, self.id, self.__dict__)
 
     def save(self):
-        """Actualiza el atributo updated_at con la fecha y hora actual."""
+        ''' actualiza el atributo de instancia pública
+        updated_at con la fecha y hora actual '''
         self.updated_at = datetime.now()
+        # llamar al método save(self) de storage
+        models.storage.save()
 
     def to_dict(self):
-        """Devuelve un diccionario con los atributos del objeto."""
-        my_dict = dict(self.__dict__)
-        my_dict['created_at'] = self.__dict__['created_at'].isoformat()
-        my_dict['updated_at'] = self.__dict__['updated_at'].isoformat()
-        my_dict['__class__'] = self.__class__.__name__
-        return (my_dict)
+        ''' devuelve un diccionario que contiene todas
+        las claves / valores de __dict__ de la instancia '''
+        dic = self.__dict__.copy()
+        dic["created_at"] = self.created_at.strftime("%Y-%m-%dT%H:%M:%S.%f")
+        dic["updated_at"] = self.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%f")
+        dic["__class__"] = self.__class__.__name__
+        return dic
